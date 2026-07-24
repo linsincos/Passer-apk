@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Aira</string>
+    <string name="send">发送</string>
+    <string name="stop">停止</string>
+    <string name="message_hint">交给 Aira 一件事…</string>
+    <string name="agent_subtitle">手机 Agent</string>
+    <string name="welcome_message">你好，我是 Aira。\n\n你可以让我整理想法、查询信息，或调用手机能力打开网页、分享文字、写邮件草稿、设置闹钟和创建日程。任何跨 App 操作都会先让你确认。</string>
+    <string name="key_storage_note">Key 使用 Android Keystore 加密，仅保存在本机。请求会直接发往所选模型服务商。</string>
+    <string name="provider_status">%1$s · %2$s%3$s</string>
+    <string name="key_missing_suffix"> · 未配置 Key</string>
+</resources>

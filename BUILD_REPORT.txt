@@ -1,0 +1,24 @@
+Aira Mobile v0.1.0 - Build Report
+Date: 2026-07-24
+
+Artifact:
+  Aira-v0.1.0-debug.apk
+  Size: 41102 bytes
+  SHA-256: C5AD870563747F4BBA4CC22C4DEEDF0064C79C3CE7E872B38926724C33EB8B3D
+
+Build:
+  Android SDK Platform 36
+  Android Build Tools 35.0.0 / 36.0.0
+  Android Gradle Plugin 8.12.0
+  Gradle 8.13
+  Java 21 runtime, Java 17 source/target
+
+Verification:
+  Debug APK build: PASS
+  Unit tests: 3 passed, 0 failed, 0 skipped
+  Android lint: No issues found
+  Java deprecation warnings: 0
+
+Notes:
+  This is a debug-signed APK for direct installation and testing.
+  A production release requires a private release signing key.
