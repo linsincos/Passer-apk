@@ -1,11 +1,10 @@
-# Aira Mobile
+# Aira 
 
-Aira Mobile 是从 Passer 独立出来的 Android 原生 Agent。它不依赖 Windows、
-ADB、scrcpy 或 Passer 进程，模型请求由手机直接发送到用户选择的服务商。
+Aira 是由 Passer 而生的 Android 原生 Agent。
 
 ## 当前能力
 
-- 豆包式轻量聊天界面：去除说明小字，保留居中标题、欢迎快捷卡、无边框助手回复和悬浮输入框
+- 轻量聊天界面：去除说明小字，保留居中标题、欢迎快捷卡、无边框助手回复和悬浮输入框
 - 自适应状态栏、刘海/挖孔、底部手势区、键盘和窄屏手机布局
 - 朴素的 Aira“路径 + 星光 + 完成勾”Android 自适应启动图标
 - DeepSeek、OpenAI、Anthropic 三种模型服务商
