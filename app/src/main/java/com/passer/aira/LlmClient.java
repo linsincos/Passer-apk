@@ -106,7 +106,11 @@ final class LlmClient {
     ) throws JSONException {
         JSONArray messages = new JSONArray();
         messages.put(new JSONObject().put("role", "system").put("content", systemPrompt));
-        appendHistory(messages, history);
+        appendOpenAiHistory(
+                messages,
+                history,
+                ModelConfig.OPENAI.equals(config.provider)
+        );
         return new JSONObject()
                 .put("model", config.model)
                 .put("messages", messages)
@@ -120,7 +124,7 @@ final class LlmClient {
             List<ChatMessage> history
     ) throws JSONException {
         JSONArray messages = new JSONArray();
-        appendHistory(messages, history);
+        appendAnthropicHistory(messages, history);
         return new JSONObject()
                 .put("model", config.model)
                 .put("system", systemPrompt)
@@ -128,14 +132,102 @@ final class LlmClient {
                 .put("max_tokens", 4096);
     }
 
-    private void appendHistory(JSONArray output, List<ChatMessage> history) throws JSONException {
+    private void appendOpenAiHistory(
+            JSONArray output,
+            List<ChatMessage> history,
+            boolean includeImages
+    ) throws JSONException {
         int start = Math.max(0, history.size() - 40);
         for (int i = start; i < history.size(); i++) {
             ChatMessage message = history.get(i);
-            output.put(new JSONObject()
-                    .put("role", message.role)
-                    .put("content", message.content));
+            JSONObject value = new JSONObject().put("role", message.role);
+            if (!"user".equals(message.role)
+                    || !includeImages
+                    || !hasImageData(message)) {
+                value.put("content", plainText(message));
+            } else {
+                JSONArray content = new JSONArray();
+                content.put(new JSONObject()
+                        .put("type", "text")
+                        .put("text", plainText(message)));
+                for (AttachmentData attachment : message.attachments) {
+                    if (attachment.hasImageData()) {
+                        content.put(new JSONObject()
+                                .put("type", "image_url")
+                                .put("image_url", new JSONObject().put(
+                                        "url",
+                                        "data:" + attachment.mimeType + ";base64,"
+                                                + attachment.base64Data
+                                )));
+                    }
+                }
+                value.put("content", content);
+            }
+            output.put(value);
         }
+    }
+
+    private void appendAnthropicHistory(JSONArray output, List<ChatMessage> history)
+            throws JSONException {
+        int start = Math.max(0, history.size() - 40);
+        for (int i = start; i < history.size(); i++) {
+            ChatMessage message = history.get(i);
+            JSONObject value = new JSONObject().put("role", message.role);
+            if (!"user".equals(message.role) || !hasImageData(message)) {
+                value.put("content", plainText(message));
+            } else {
+                JSONArray content = new JSONArray();
+                content.put(new JSONObject()
+                        .put("type", "text")
+                        .put("text", plainText(message)));
+                for (AttachmentData attachment : message.attachments) {
+                    if (attachment.hasImageData()) {
+                        content.put(new JSONObject()
+                                .put("type", "image")
+                                .put("source", new JSONObject()
+                                        .put("type", "base64")
+                                        .put("media_type", attachment.mimeType)
+                                        .put("data", attachment.base64Data)));
+                    }
+                }
+                value.put("content", content);
+            }
+            output.put(value);
+        }
+    }
+
+    private boolean hasImageData(ChatMessage message) {
+        for (AttachmentData attachment : message.attachments) {
+            if (attachment.hasImageData()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String plainText(ChatMessage message) {
+        StringBuilder value = new StringBuilder(message.content);
+        for (AttachmentData attachment : message.attachments) {
+            value.append("\n\n附件：")
+                    .append(attachment.name)
+                    .append("（")
+                    .append(attachment.mimeType)
+                    .append("，")
+                    .append(attachment.size)
+                    .append(" 字节）");
+            if (attachment.hasTextContent()) {
+                value.append("\n--- 附件内容开始 ---\n")
+                        .append(attachment.textContent)
+                        .append("\n--- 附件内容结束 ---");
+            } else if (attachment.hasImageData()) {
+                value.append("\n[图像数据随本条消息提供]");
+            } else if (attachment.isImage()) {
+                value.append("\n[历史图像附件仅保留元数据]");
+            } else {
+                value.append("\n[仅保留附件元数据]");
+            }
+        }
+        return value.toString();
     }
 
     private String readAll(InputStream stream) throws IOException {

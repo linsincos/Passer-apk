@@ -10,8 +10,8 @@ android {
         applicationId "com.passer.aira"
         minSdk 26
         targetSdk 36
-        versionCode 1
-        versionName "0.1.0"
+        versionCode 6
+        versionName "0.3.2"
     }
 
     buildTypes {
@@ -31,6 +31,7 @@ android {
         // Gradle 8.13 is the version recommended for the pinned AGP 8.12 line.
         disable += "AndroidGradlePluginVersion"
     }
+
 }
 
 dependencies {

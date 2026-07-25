@@ -1,24 +1,36 @@
-Aira Mobile v0.1.0 - Build Report
-Date: 2026-07-24
+Aira Mobile v0.3.2 - Build Report
+Date: 2026-07-25
 
 Artifact:
-  Aira-v0.1.0-debug.apk
-  Size: 41102 bytes
-  SHA-256: C5AD870563747F4BBA4CC22C4DEEDF0064C79C3CE7E872B38926724C33EB8B3D
+  Aira-v0.3.2-debug.apk
+  Size: 339122 bytes
+  SHA-256: 8B1921BBD29BDF4AAD80C020E4E787A454952419633471460EF51B17758734C9
 
 Build:
   Android SDK Platform 36
-  Android Build Tools 35.0.0 / 36.0.0
+  Android Build Tools 36.0.0
   Android Gradle Plugin 8.12.0
   Gradle 8.13
   Java 21 runtime, Java 17 source/target
 
+Changes:
+  Version name 0.3.2, version code 6
+  Left-top history button opens a system-bar-safe conversation side panel
+  Local multi-conversation storage with automatic migration from legacy history
+  Create, load, rename, and delete conversation actions
+  Active conversation highlighting and first-user-message title generation
+  Existing startup crash diagnostics, attachment support, agent loop, and icon retained
+
 Verification:
-  Debug APK build: PASS
-  Unit tests: 3 passed, 0 failed, 0 skipped
+  Clean debug APK build: PASS (23 seconds)
+  Unit tests: 7 passed, 0 failed, 0 skipped
   Android lint: No issues found
-  Java deprecation warnings: 0
+  APK package/version manifest check: PASS
+  APK Signature Scheme v2: PASS
+  Signing certificate SHA-256:
+    6e6626c770bfd36bdf5f95062a71dfd2ae5051b9687944036a54d9df863185b3
 
 Notes:
+  No real-device cold-start test was executed in this environment.
   This is a debug-signed APK for direct installation and testing.
   A production release requires a private release signing key.
