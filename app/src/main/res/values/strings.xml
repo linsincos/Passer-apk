@@ -16,6 +16,7 @@
     <string name="rename_conversation">重命名对话</string>
     <string name="delete_conversation">删除对话？</string>
     <string name="settings_label">设置</string>
+    <string name="computer_tasks">电脑任务</string>
     <string name="add_attachment">添加附件</string>
     <string name="attachment_chip">📎 %1$s   ×</string>
     <string name="privacy_label">隐私说明</string>

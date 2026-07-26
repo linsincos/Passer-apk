@@ -33,6 +33,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -452,6 +454,12 @@ public final class MainActivity extends Activity {
         header.addView(historyButton, new LinearLayout.LayoutParams(dp(48), dp(48)));
         header.addView(title, new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView tasks = iconButton("任务");
+        tasks.setTextSize(15);
+        tasks.setContentDescription("电脑任务");
+        tasks.setOnClickListener(view -> showPasserTasks());
+        header.addView(tasks, new LinearLayout.LayoutParams(dp(58), dp(48)));
 
         TextView settings = iconButton(getString(R.string.settings_symbol));
         settings.setContentDescription(getString(R.string.settings_label));
@@ -909,6 +917,17 @@ public final class MainActivity extends Activity {
         note.setPadding(0, dp(4), 0, 0);
         content.addView(note);
 
+        TextView passerLink = new TextView(this);
+        passerLink.setText("连接 Passer");
+        passerLink.setTextColor(BLUE);
+        passerLink.setTextSize(16);
+        passerLink.setGravity(Gravity.CENTER_VERTICAL);
+        passerLink.setPadding(dp(14), 0, dp(14), 0);
+        passerLink.setBackground(roundRect(Color.WHITE, BORDER, 10));
+        LinearLayout.LayoutParams passerLinkParams = fieldParams();
+        passerLinkParams.setMargins(0, dp(16), 0, 0);
+        content.addView(passerLink, passerLinkParams);
+
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Aira 设置")
                 .setView(content)
@@ -916,6 +935,10 @@ public final class MainActivity extends Activity {
                 .setNeutralButton("清除 Key", null)
                 .setPositiveButton("保存", null)
                 .create();
+        passerLink.setOnClickListener(view -> {
+            dialog.dismiss();
+            showPasserLinkSettings();
+        });
         dialog.setOnShowListener(ignored -> {
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(view -> {
                 storage.clearApiKey();
@@ -941,6 +964,242 @@ public final class MainActivity extends Activity {
             });
         });
         dialog.show();
+    }
+
+    private void showPasserLinkSettings() {
+        SecureStore secureStore = new SecureStore(this);
+        PasserLinkConfig current = PasserLinkConfig.load(this, secureStore);
+        final DiscoveredPasser[] selectedComputer = {null};
+        LinearLayout content = dialogContent();
+
+        content.addView(fieldLabel("Passer 主机"));
+        EditText host = field(current.host, false);
+        host.setHint("例如 192.168.1.20");
+        content.addView(host, fieldParams());
+
+        content.addView(fieldLabel("端口"));
+        EditText port = field(String.valueOf(current.port), false);
+        port.setInputType(InputType.TYPE_CLASS_NUMBER);
+        content.addView(port, fieldParams());
+
+        content.addView(fieldLabel("连接码"));
+        EditText code = field("", true);
+        code.setInputType(InputType.TYPE_CLASS_NUMBER
+                | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+        code.setHint(current.connectionCode.isEmpty()
+                ? "请输入 Passer 显示的 8 位连接码"
+                : "已安全保存；留空则不修改");
+        content.addView(code, fieldParams());
+
+        TextView securityNote = new TextView(this);
+        securityNote.setText("仅允许回环、局域网或链路本地 IP；连接码由 Android Keystore "
+                + "AES-GCM 加密保存。");
+        securityNote.setTextColor(MUTED);
+        securityNote.setTextSize(12);
+        securityNote.setPadding(0, dp(6), 0, dp(8));
+        content.addView(securityNote);
+
+        TextView discover = new TextView(this);
+        discover.setText("搜索同一网络的电脑");
+        discover.setTextColor(BLUE);
+        discover.setTextSize(15);
+        discover.setGravity(Gravity.CENTER);
+        discover.setBackground(roundRect(Color.WHITE, BORDER, 10));
+        content.addView(discover, fieldParams());
+
+        TextView discoverStatus = new TextView(this);
+        discoverStatus.setTextColor(MUTED);
+        discoverStatus.setTextSize(12);
+        discoverStatus.setPadding(0, dp(7), 0, dp(8));
+        if (!current.computerName.isEmpty()) {
+            discoverStatus.setText("当前配对：" + current.computerName);
+        }
+        content.addView(discoverStatus);
+
+        TextView test = new TextView(this);
+        test.setText("连接测试");
+        test.setTextColor(Color.WHITE);
+        test.setTextSize(15);
+        test.setGravity(Gravity.CENTER);
+        test.setBackground(roundRect(BLUE, BLUE, 10));
+        content.addView(test, fieldParams());
+
+        TextView testStatus = new TextView(this);
+        testStatus.setTextColor(MUTED);
+        testStatus.setTextSize(12);
+        testStatus.setPadding(0, dp(8), 0, 0);
+        content.addView(testStatus);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("连接 Passer")
+                .setView(content)
+                .setNegativeButton("取消", null)
+                .setNeutralButton("断开", null)
+                .setPositiveButton("保存", null)
+                .create();
+        discover.setOnClickListener(view -> {
+            discover.setEnabled(false);
+            discover.setText("正在搜索…");
+            discoverStatus.setText("请确认电脑和手机连接同一局域网，并已在 Aira 中启用手机连接。");
+            new Thread(() -> {
+                try {
+                    List<DiscoveredPasser> computers =
+                            new PasserDiscoveryClient().discover(2_500);
+                    runOnUiThread(() -> {
+                        discover.setEnabled(true);
+                        discover.setText("搜索同一网络的电脑");
+                        if (computers.isEmpty()) {
+                            discoverStatus.setText(
+                                    "没有发现电脑；仍可手动填写电脑的局域网 IP。");
+                            return;
+                        }
+                        String[] labels = new String[computers.size()];
+                        for (int i = 0; i < computers.size(); i++) {
+                            labels[i] = computers.get(i).displayName();
+                        }
+                        new AlertDialog.Builder(this)
+                                .setTitle("选择要配对的电脑")
+                                .setItems(labels, (selectionDialog, which) -> {
+                                    DiscoveredPasser computer = computers.get(which);
+                                    selectedComputer[0] = computer;
+                                    host.setText(computer.host);
+                                    port.setText(String.valueOf(computer.port));
+                                    discoverStatus.setText(
+                                            "已选择：" + computer.computerName
+                                                    + " · 请输入电脑端 8 位连接码。");
+                                    code.requestFocus();
+                                })
+                                .setNegativeButton("取消", null)
+                                .show();
+                    });
+                } catch (Exception error) {
+                    runOnUiThread(() -> {
+                        discover.setEnabled(true);
+                        discover.setText("搜索同一网络的电脑");
+                        discoverStatus.setText("搜索失败：" + readableError(error));
+                    });
+                }
+            }, "aira-passer-discovery").start();
+        });
+        test.setOnClickListener(view -> {
+            PasserLinkConfig candidate;
+            try {
+                candidate = readPasserLinkConfig(
+                        host, port, code, current, selectedComputer[0]);
+                candidate.save(this, secureStore, !code.getText().toString().trim().isEmpty());
+            } catch (Exception error) {
+                testStatus.setText("配置无效：" + readableError(error));
+                return;
+            }
+            test.setEnabled(false);
+            test.setText("正在测试…");
+            testStatus.setText("");
+            PasserLinkConfig testConfig = PasserLinkConfig.load(this, secureStore);
+            new Thread(() -> {
+                try {
+                    JSONObject result = new PasserLinkClient(testConfig)
+                            .request("status", new JSONObject());
+                    JSONObject desktopStatus = result.optJSONObject("result");
+                    PasserLinkConfig verified = testConfig;
+                    if (desktopStatus != null) {
+                        String computerId = desktopStatus.optString("computer_id", "");
+                        String computerName = desktopStatus.optString("computer_name", "");
+                        if (PasserDiscoveryClient.isValidComputerId(computerId)) {
+                            verified = testConfig.withComputerIdentity(
+                                    computerId,
+                                    computerName.isEmpty() ? testConfig.host : computerName
+                            );
+                            verified.save(this, secureStore, false);
+                        }
+                    }
+                    PasserLinkConfig finalVerified = verified;
+                    runOnUiThread(() -> {
+                        test.setEnabled(true);
+                        test.setText("连接测试");
+                        String name = finalVerified.computerName.isEmpty()
+                                ? finalVerified.host
+                                : finalVerified.computerName;
+                        testStatus.setText("配对成功：" + name);
+                        discoverStatus.setText("当前配对：" + name);
+                    });
+                } catch (Exception error) {
+                    runOnUiThread(() -> {
+                        test.setEnabled(true);
+                        test.setText("连接测试");
+                        testStatus.setText("连接失败：" + readableError(error));
+                    });
+                }
+            }, "aira-passer-test").start();
+        });
+        dialog.setOnShowListener(ignored -> {
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(view -> {
+                PasserLinkConfig.disconnect(this, secureStore);
+                Toast.makeText(this, "已断开 Passer，并清除连接码。", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            });
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+                try {
+                    PasserLinkConfig candidate =
+                            readPasserLinkConfig(
+                                    host, port, code, current, selectedComputer[0]);
+                    candidate.save(
+                            this,
+                            secureStore,
+                            !code.getText().toString().trim().isEmpty()
+                    );
+                    Toast.makeText(this, "Passer 连接配置已保存。", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                } catch (Exception error) {
+                    testStatus.setText("保存失败：" + readableError(error));
+                }
+            });
+        });
+        dialog.show();
+    }
+
+    private PasserLinkConfig readPasserLinkConfig(
+            EditText host,
+            EditText port,
+            EditText code,
+            PasserLinkConfig current,
+            DiscoveredPasser selectedComputer
+    ) {
+        int portValue;
+        try {
+            portValue = Integer.parseInt(port.getText().toString().trim());
+        } catch (NumberFormatException error) {
+            throw new IllegalArgumentException("端口必须是数字。");
+        }
+        String enteredCode = code.getText().toString().trim();
+        PasserLinkConfig base = new PasserLinkConfig(
+                host.getText().toString(),
+                portValue,
+                current.deviceId,
+                enteredCode.isEmpty() ? current.connectionCode : enteredCode
+        );
+        if (selectedComputer != null
+                && selectedComputer.host.equals(base.host)
+                && selectedComputer.port == base.port) {
+            return base.withComputerIdentity(
+                    selectedComputer.computerId,
+                    selectedComputer.computerName
+            );
+        }
+        if (base.host.equals(current.host) && base.port == current.port) {
+            return base.withComputerIdentity(current.computerId, current.computerName);
+        }
+        return base;
+    }
+
+    private void showPasserTasks() {
+        new PasserTasksDialog(this, this::showPasserLinkSettings).show();
+    }
+
+    private String readableError(Throwable error) {
+        String message = error.getMessage();
+        return message == null || message.trim().isEmpty()
+                ? error.getClass().getSimpleName()
+                : message.trim();
     }
 
     private void showDisclosure() {

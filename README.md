@@ -1,4 +1,6 @@
-# Aira 
+# Aira
+
+当前版本：`0.4.1`（versionCode 8）。
 
 Aira 是由 Passer 而生的 Android 原生 Agent。
 
@@ -12,6 +14,20 @@ Aira 是由 Passer 而生的 Android 原生 Agent。
 - 左上角打开历史对话侧边栏，可新建、载入、重命名或删除对话
 - OpenAI/Anthropic 支持图片附件；三种服务商均支持读取文本附件
 - Android Keystore 加密保存 API Key
+- 可在“设置 → 连接 Passer”中配置电脑的局域网 IP、端口和连接码，并从手机调用
+  Passer 状态、召出窗口、工具/项目列表、搜索、打开项目或工具、截图和清除搜索。
+- “连接 Passer”支持自动搜索同一局域网内启用了手机连接的电脑；选择对应电脑并输入
+  Passer 显示的 8 位连接码即可配对，仍保留手动输入 IP 的方式。
+- 首页顶部新增“任务”入口，可查看当前配对电脑上的 Aira 自动化任务、启用状态、执行计划、
+  下次运行时间和上次结果，并新增一次、每天或间隔任务。任务运行期间会自动刷新，显示
+  开始时间、当前阶段、Aira 执行轮次、更新时间和最新进度摘要；空闲时降低刷新频率。
+- 对应电脑任务接口仅开放 `list_tasks` 和 `add_task`；不开放手机删除任务、任意文件读取、
+  脚本执行或 Passer 设置修改。
+- 手机与 Passer 使用 `aira-passer-v1` TCP JSONL 协议；连接码经
+  PBKDF2-HMAC-SHA256 派生后进行双向 HMAC 校验，连接码由 Android Keystore
+  AES-GCM 加密保存。连接码为 Passer 显示的 8 位数字；默认端口为 `50720`。
+  连接仅允许回环、私有局域网和链路本地 IP，不会连接公网。
+- `summon`、`open_item`、`open_tool`、`start_screenshot` 每次执行前都必须在手机确认。
 - 多会话历史与长期记忆仅保存在本机；升级时自动迁移原有单会话记录
 - 最多 12 轮的“规划 → 手机工具 → 结果验证 → 继续执行”单任务 Agent 闭环
 - 读取当前时间、设备型号、Android 版本、语言和电量

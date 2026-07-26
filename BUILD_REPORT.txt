@@ -1,36 +1,36 @@
-Aira Mobile v0.3.2 - Build Report
-Date: 2026-07-25
+Aira Mobile v0.4.1 - Build Report
+Date: 2026-07-26
 
 Artifact:
-  Aira-v0.3.2-debug.apk
-  Size: 339122 bytes
-  SHA-256: 8B1921BBD29BDF4AAD80C020E4E787A454952419633471460EF51B17758734C9
+  Aira-v0.4.1-debug.apk
+  Size: 435548 bytes
+  SHA-256: C4BE3F79044CAFDC5D02385A5A5541333076DC549400CC79CE07127794C4DA10
 
 Build:
   Android SDK Platform 36
-  Android Build Tools 36.0.0
   Android Gradle Plugin 8.12.0
   Gradle 8.13
   Java 21 runtime, Java 17 source/target
 
 Changes:
-  Version name 0.3.2, version code 6
-  Left-top history button opens a system-bar-safe conversation side panel
-  Local multi-conversation storage with automatic migration from legacy history
-  Create, load, rename, and delete conversation actions
-  Active conversation highlighting and first-user-message title generation
-  Existing startup crash diagnostics, attachment support, agent loop, and icon retained
+  Version name 0.4.1, version code 8
+  Added automatic discovery of Passer computers on the same LAN
+  Added stable computer identity and explicit 8-digit pairing
+  Added a computer task center that can list existing Aira tasks
+  Added creation of one-time, daily, and interval Aira tasks
+  Added live monitoring for running tasks with stage, round, start/update time,
+  and a latest-progress preview
+  Added adaptive automatic refresh: 2.5 seconds while active, 10 seconds while idle
+  Kept task deletion, script execution, and arbitrary file access unavailable
+  Kept Android Keystore AES-GCM storage and signed challenge/response transport
 
 Verification:
-  Clean debug APK build: PASS (23 seconds)
-  Unit tests: 7 passed, 0 failed, 0 skipped
-  Android lint: No issues found
-  APK package/version manifest check: PASS
-  APK Signature Scheme v2: PASS
-  Signing certificate SHA-256:
-    6e6626c770bfd36bdf5f95062a71dfd2ae5051b9687944036a54d9df863185b3
+  testDebugUnitTest: PASS (14 tests)
+  assembleDebug: PASS
+  lintDebug: PASS
+  APK manifest: versionCode 8 / versionName 0.4.1
 
 Notes:
-  No real-device cold-start test was executed in this environment.
+  No real-device same-Wi-Fi connection test was executed in this environment.
   This is a debug-signed APK for direct installation and testing.
   A production release requires a private release signing key.

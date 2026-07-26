@@ -20,6 +20,8 @@ final class SecureStore {
     private static final String PREFS = "aira_secure";
     private static final String VALUE = "api_key";
     private static final String IV = "api_key_iv";
+    private static final String PASSER_CODE = "passer_connection_code";
+    private static final String PASSER_CODE_IV = "passer_connection_code_iv";
 
     private final SharedPreferences preferences;
 
@@ -28,22 +30,46 @@ final class SecureStore {
     }
 
     synchronized void saveApiKey(String value) throws Exception {
+        saveSecret(VALUE, IV, value);
+    }
+
+    synchronized String loadApiKey() {
+        return loadSecret(VALUE, IV);
+    }
+
+    synchronized void clearApiKey() {
+        clearSecret(VALUE, IV);
+    }
+
+    synchronized void savePasserConnectionCode(String value) throws Exception {
+        saveSecret(PASSER_CODE, PASSER_CODE_IV, value);
+    }
+
+    synchronized String loadPasserConnectionCode() {
+        return loadSecret(PASSER_CODE, PASSER_CODE_IV);
+    }
+
+    synchronized void clearPasserConnectionCode() {
+        clearSecret(PASSER_CODE, PASSER_CODE_IV);
+    }
+
+    private void saveSecret(String valueKey, String ivKey, String value) throws Exception {
         if (value == null || value.isEmpty()) {
-            clearApiKey();
+            clearSecret(valueKey, ivKey);
             return;
         }
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey());
         byte[] encrypted = cipher.doFinal(value.getBytes(StandardCharsets.UTF_8));
         preferences.edit()
-                .putString(VALUE, Base64.encodeToString(encrypted, Base64.NO_WRAP))
-                .putString(IV, Base64.encodeToString(cipher.getIV(), Base64.NO_WRAP))
+                .putString(valueKey, Base64.encodeToString(encrypted, Base64.NO_WRAP))
+                .putString(ivKey, Base64.encodeToString(cipher.getIV(), Base64.NO_WRAP))
                 .apply();
     }
 
-    synchronized String loadApiKey() {
-        String encoded = preferences.getString(VALUE, "");
-        String encodedIv = preferences.getString(IV, "");
+    private String loadSecret(String valueKey, String ivKey) {
+        String encoded = preferences.getString(valueKey, "");
+        String encodedIv = preferences.getString(ivKey, "");
         if (encoded == null || encodedIv == null || encoded.isEmpty() || encodedIv.isEmpty()) {
             return "";
         }
@@ -61,8 +87,8 @@ final class SecureStore {
         }
     }
 
-    synchronized void clearApiKey() {
-        preferences.edit().remove(VALUE).remove(IV).apply();
+    private void clearSecret(String valueKey, String ivKey) {
+        preferences.edit().remove(valueKey).remove(ivKey).apply();
     }
 
     private SecretKey getOrCreateKey() throws Exception {

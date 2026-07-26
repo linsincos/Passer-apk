@@ -24,10 +24,16 @@ final class AgentTools {
 
     private final Activity activity;
     private final AppStorage storage;
+    private final SecureStore secureStore;
 
     AgentTools(Activity activity, AppStorage storage) {
         this.activity = activity;
         this.storage = storage;
+        this.secureStore = new SecureStore(activity);
+    }
+
+    boolean hasPasserConnection() {
+        return PasserLinkConfig.load(activity, secureStore).isConfigured();
     }
 
     JSONObject execute(JSONObject spec) {
@@ -56,6 +62,29 @@ final class AgentTools {
                     return addCalendarEvent(action, spec);
                 case "open_maps":
                     return openMaps(action, spec);
+                case "passer_status":
+                    return desktopAction(action, "status", spec, false);
+                case "summon":
+                case "list_tools":
+                case "list_items":
+                case "search":
+                case "open_item":
+                case "open_tool":
+                case "start_screenshot":
+                case "clear_search":
+                    return desktopAction(
+                            action,
+                            action,
+                            spec,
+                            "summon".equals(action)
+                                    || "open_item".equals(action)
+                                    || "open_tool".equals(action)
+                                    || "start_screenshot".equals(action)
+                    );
+                case "list_tasks":
+                    return desktopAction(action, action, spec, false);
+                case "add_task":
+                    return desktopAction(action, action, spec, true);
                 default:
                     return failure(action, "不支持该手机动作。");
             }
@@ -206,6 +235,28 @@ final class AgentTools {
         }
         launch(new Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(query))));
         return success(action, new JSONObject().put("map_opened", true).put("query", query));
+    }
+
+    private JSONObject desktopAction(
+            String localAction,
+            String desktopAction,
+            JSONObject spec,
+            boolean needsConfirmation
+    ) throws Exception {
+        PasserLinkConfig config = PasserLinkConfig.load(activity, secureStore);
+        if (!config.isConfigured()) {
+            return failure(localAction, "尚未配置 Passer 连接。");
+        }
+        JSONObject params = new JSONObject(spec.toString());
+        params.remove("action");
+        if (needsConfirmation && !confirm(
+                "允许 Aira 操作 Passer？",
+                "桌面动作：" + desktopAction + "\n参数：" + preview(params.toString())
+        )) {
+            return denied(localAction);
+        }
+        JSONObject result = new PasserLinkClient(config).request(desktopAction, params);
+        return success(localAction, result);
     }
 
     private void launch(Intent intent) throws Exception {

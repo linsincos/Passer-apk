@@ -107,6 +107,23 @@ final class AgentRunner {
 
     private String systemPrompt() {
         String memory = storage.loadMemory();
+        String passerTools = tools.hasPasserConnection()
+                ? "\n你还可调用以下 Passer 桌面工具：\n"
+                + "- passer_status：读取 Passer 连接和运行状态。\n"
+                + "- summon：在电脑上召出 Passer 窗口；手机会逐次确认。\n"
+                + "- list_tools：列出 Passer 工具。\n"
+                + "- list_items：列出 Passer 中的项目。\n"
+                + "- search：搜索 Passer 项目，参数 query。\n"
+                + "- open_item：打开搜索或列表中的项目，参数 query；"
+                + "手机会逐次确认。\n"
+                + "- open_tool：打开 Passer 工具，参数 tool；手机会逐次确认。\n"
+                + "- start_screenshot：启动 Passer 截图；手机会逐次确认。\n"
+                + "- clear_search：清除 Passer 搜索。\n"
+                + "- list_tasks：查看对应电脑上的 Aira 自动化任务。\n"
+                + "- add_task：在对应电脑新增自动化任务；手机会逐次确认。参数 title、prompt、"
+                + "mode(once/daily/interval)；once 传 when(YYYY-MM-DD HH:MM)，"
+                + "daily 传 at(HH:MM)，interval 传 every 和 unit(minutes/hours/days)。\n"
+                : "";
         return "你是 Aira，一款独立运行在 Android 手机上的中文智能 Agent。"
                 + "每次只处理用户当前交给你的一个目标。你要在内部规划、调用工具、检查真实结果并持续推进，"
                 + "在安全边界内尽量把整件事做完，而不是只给一串步骤。"
@@ -125,6 +142,7 @@ final class AgentRunner {
                 + "- add_calendar_event：打开日程编辑页，参数 title、start_millis、end_millis，"
                 + "可选 description、location。毫秒时间戳必须先结合 current_time 正确计算。\n"
                 + "- open_maps：打开地图搜索，参数 query。\n\n"
+                + passerTools
                 + "需要工具时，严格输出：\n"
                 + "[[AIRA_ACTION]]\n"
                 + "[{\"action\":\"current_time\"}]\n"
